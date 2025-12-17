@@ -1,0 +1,150 @@
+#include <stdio.h>
+#include <string.h>
+
+struct Transaction {
+    char date[12];
+    char type[10];
+    float amount;
+    char desc[50];
+};
+
+int main() {
+    struct Transaction list[100];
+    int count = 0;
+    int choice;
+    float balance = 0;
+
+    // FILE LOADING
+    FILE *f_read = fopen("tracker.txt", "r");
+    if (f_read != NULL) {
+        while (fscanf(f_read, "%s %s %f ", 
+                       list[count].date,
+                       list[count].type,
+                       &list[count].amount) == 3) {
+
+            fgets(list[count].desc, sizeof(list[count].desc), f_read);
+            list[count].desc[strcspn(list[count].desc, "\n")] = 0;
+            count++;
+        }
+        fclose(f_read);
+    }
+
+    while (1) {
+        // MAIN MENU
+        printf("\n========================================\n");
+        printf("        💰 PERSONAL EXPENSE TRACKER 💰\n");
+        printf("========================================\n");
+        printf("1. ➕ Add New Transaction (Income or Expense)\n");
+        printf("2. 📊 View Financial Summary\n");
+        printf("3. 🗑️ Clear All History\n");
+        printf("4. 💾 Save & Exit\n");
+        printf("----------------------------------------\n");
+        printf("Choice: ");
+        scanf("%d", &choice);
+        getchar();  // clear newline
+
+        if (choice == 1) {
+            // INPUT DATA
+            printf("📅 Enter Date (YYYY-MM-DD): ");
+            scanf("%s", list[count].date);
+
+            char t;
+            printf("💼 Transaction Type (I = Income, E = Expense): ");
+            scanf(" %c", &t);
+
+            if (t == 'i' || t == 'I')
+                strcpy(list[count].type, "INCOME");
+            else
+                strcpy(list[count].type, "EXPENSE");
+
+            printf("💵 Amount: ");
+            scanf("%f", &list[count].amount);
+
+            getchar(); // clear newline
+            printf("📝 Description: ");
+            fgets(list[count].desc, sizeof(list[count].desc), stdin);
+            list[count].desc[strcspn(list[count].desc, "\n")] = 0;
+
+            count++;
+            printf("✅ Transaction added successfully!\n");
+
+        } else if (choice == 2) {
+            // VIEW HISTORY
+            balance = 0;
+            printf("\n📜 TRANSACTION HISTORY\n");
+            printf("-------------------------------------------------------------\n");
+
+            if (count == 0) {
+                printf("📭 No transactions found.\n");
+                printf("Start by adding your first transaction!\n");
+                printf("-------------------------------------------------------------\n");
+                printf("💰 Current Balance: $0.00\n");
+            } else {
+                printf("%-12s %-10s %-12s %s\n", "DATE", "TYPE", "AMOUNT", "DESCRIPTION");
+                printf("-------------------------------------------------------------\n");
+
+                for (int i = 0; i < count; i++) {
+                    printf("%-12s %-10s $%-11.2f %s\n",
+                           list[i].date,
+                           list[i].type,
+                           list[i].amount,
+                           list[i].desc);
+
+                    if (strcmp(list[i].type, "INCOME") == 0)
+                        balance += list[i].amount;
+                    else
+                        balance -= list[i].amount;
+                }
+
+                printf("-------------------------------------------------------------\n");
+
+                if (balance < 0)
+                    printf("💰 Current Balance: -$%.2f ⚠️\n", -balance);
+                else
+                    printf("💰 Current Balance: $%.2f\n", balance);
+            }
+
+        } else if (choice == 3) {
+            // CLEAR HISTORY
+            char confirm;
+            printf("\n⚠️  WARNING: This will delete ALL records!\n");
+            printf("Are you sure? (y/n): ");
+            scanf(" %c", &confirm);
+
+            if (confirm == 'y' || confirm == 'Y') {
+                count = 0;  // Reset memory
+                printf("✅ All history cleared from memory!\n");
+
+                // Optional: delete saved file
+                printf("Delete saved file too? (y/n): ");
+                scanf(" %c", &confirm);
+                if (confirm == 'y' || confirm == 'Y') {
+                    remove("tracker.txt");
+                    printf("✅ Saved file deleted.\n");
+                }
+            } else {
+                printf("❌ Clear cancelled.\n");
+            }
+
+        } else if (choice == 4) {
+            // SAVE & EXIT
+            FILE *f_save = fopen("tracker.txt", "w");
+            for (int i = 0; i < count; i++) {
+                fprintf(f_save, "%s %s %.2f %s\n",
+                        list[i].date,
+                        list[i].type,
+                        list[i].amount,
+                        list[i].desc);
+            }
+            fclose(f_save);
+            printf("💾 Saving your data...\n");
+            printf("✅ All changes saved successfully.\n");
+            printf("👋 See you next time!\n");
+            break;
+        } else {
+            printf("❌ Invalid choice! Please enter 1-4.\n");
+        }
+    }
+
+    return 0;
+}
