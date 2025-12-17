@@ -56,8 +56,8 @@ int main() {
                 strcpy(list[count].type, "INCOME");
             else
                 strcpy(list[count].type, "EXPENSE");
+                printf("💵 Amount:元 ");
 
-            printf("💵 Amount: ");
             scanf("%f", &list[count].amount);
 
             getchar(); // clear newline
@@ -78,13 +78,13 @@ int main() {
                 printf("📭 No transactions found.\n");
                 printf("Start by adding your first transaction!\n");
                 printf("-------------------------------------------------------------\n");
-                printf("💰 Current Balance: $0.00\n");
+                printf("💰 Current Balance: 元0.00\n");
             } else {
                 printf("%-12s %-10s %-12s %s\n", "DATE", "TYPE", "AMOUNT", "DESCRIPTION");
                 printf("-------------------------------------------------------------\n");
 
                 for (int i = 0; i < count; i++) {
-                    printf("%-12s %-10s $%-11.2f %s\n",
+                    printf("%-12s %-10s 元%-11.2f %s\n",
                            list[i].date,
                            list[i].type,
                            list[i].amount,
@@ -99,9 +99,9 @@ int main() {
                 printf("-------------------------------------------------------------\n");
 
                 if (balance < 0)
-                    printf("💰 Current Balance: -$%.2f ⚠️\n", -balance);
+                    printf("💰 Current Balance: -元%.2f ⚠️\n", -balance);
                 else
-                    printf("💰 Current Balance: $%.2f\n", balance);
+                    printf("💰 Current Balance: 元%.2f\n", balance);
             }
 
         } else if (choice == 3) {
@@ -114,14 +114,6 @@ int main() {
             if (confirm == 'y' || confirm == 'Y') {
                 count = 0;  // Reset memory
                 printf("✅ All history cleared from memory!\n");
-
-                // Optional: delete saved file
-                printf("Delete saved file too? (y/n): ");
-                scanf(" %c", &confirm);
-                if (confirm == 'y' || confirm == 'Y') {
-                    remove("tracker.txt");
-                    printf("✅ Saved file deleted.\n");
-                }
             } else {
                 printf("❌ Clear cancelled.\n");
             }
