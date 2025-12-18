@@ -1,0 +1,171 @@
+#include <stdio.h>      // Standard I/O library for printf, scanf, FILE operations
+#include <string.h>     // String library for strcpy, strcmp, strcspn functions
+
+// Define a structure to represent a single financial transaction
+struct Transaction {
+    char date[12];      // Store date as string (e.g., "2024-01-15")
+    char type[10];      // Store transaction type: "INCOME" or "EXPENSE"
+    float amount;       // Store transaction amount as a decimal number
+    char desc[50];      // Store user's description of the transaction
+};
+
+int main() {
+    // Create an array that can hold up to 100 transactions
+    struct Transaction list[100];
+    int count = 0;              // Counter to track how many transactions are stored
+    int choice;                 // Store user's menu selection
+    float balance = 0;          // Track running balance (income - expenses)
+
+    // === FILE LOADING SECTION ===
+    // Attempt to open existing data file to load previous transactions
+    FILE *f_read = fopen("tracker.txt", "r");  // Open file in read mode
+    if (f_read != NULL) {                       // Only proceed if file exists
+        // Loop through file and read transactions until EOF (end of file)
+        while (fscanf(f_read, "%s %s %f ", 
+                       list[count].date,       // Read date string
+                       list[count].type,       // Read type string
+                       &list[count].amount) == 3) {  // Read amount; == 3 means all 3 items read successfully
+
+            // fgets reads the description (remaining text on line including spaces)
+            fgets(list[count].desc, sizeof(list[count].desc), f_read);
+            
+            // Remove the newline character from description
+            // strcspn finds position of '\n', then set it to null terminator
+            list[count].desc[strcspn(list[count].desc, "\n")] = 0;
+            
+            count++;  // Increment counter for next transaction
+        }
+        fclose(f_read);  // Close the file when done reading
+    }
+
+    // === MAIN MENU LOOP ===
+    // Keep displaying menu until user chooses "Save & Exit"
+    while (1) {
+        // Display the main menu options
+        printf("\n========================================\n");
+        printf("        💰 PERSONAL EXPENSE TRACKER 💰\n");
+        printf("========================================\n");
+        printf("1. ➕ Add New Transaction (Income or Expense)\n");
+        printf("2. 📊 View Financial Summary\n");
+        printf("3. 🗑️ Clear All History\n");
+        printf("4. 💾 Save & Exit\n");
+        printf("----------------------------------------\n");
+        printf("Choice: ");
+        scanf("%d", &choice);  // Read user's menu choice as integer
+        getchar();             // Clear the newline character left in input buffer
+
+        // === CHOICE 1: ADD NEW TRANSACTION ===
+        if (choice == 1) {
+            // Prompt user for transaction date
+            printf("📅 Enter Date (YYYY-MM-DD): ");
+            scanf("%s", list[count].date);  // Read date string
+
+            // Prompt user for transaction type (Income or Expense)
+            char t;  // Temporary variable to store single character input
+            printf("💼 Transaction Type (I = Income, E = Expense): ");
+            scanf(" %c", &t);  // Read single character (space before %c skips whitespace)
+
+            // Convert input character to full type string
+            if (t == 'i' || t == 'I')
+                strcpy(list[count].type, "INCOME");  // Copy "INCOME" string
+            else
+                strcpy(list[count].type, "EXPENSE");  // Copy "EXPENSE" string
+            
+            printf("💵 Amount: 元 ");  // 元 is Chinese currency symbol
+            scanf("%f", &list[count].amount);  // Read amount as decimal number
+
+            getchar();  // Clear newline from input buffer
+            printf("📝 Description: ");
+            fgets(list[count].desc, sizeof(list[count].desc), stdin);  // Read description with spaces
+            
+            // Remove trailing newline from description
+            list[count].desc[strcspn(list[count].desc, "\n")] = 0;
+
+            count++;  // Increment counter to track next empty slot
+            printf("✅ Transaction added successfully!\n");
+
+        // === CHOICE 2: VIEW FINANCIAL SUMMARY ===
+        } else if (choice == 2) {
+            balance = 0;  // Reset balance to recalculate from all transactions
+            printf("\n📜 TRANSACTION HISTORY\n");
+            printf("-------------------------------------------------------------\n");
+
+            // Check if there are any transactions stored
+            if (count == 0) {
+                printf("📭 No transactions found.\n");
+                printf("Start by adding your first transaction!\n");
+                printf("-------------------------------------------------------------\n");
+                printf("💰 Current Balance: 元0.00\n");
+            } else {
+                // Display header row with column labels
+                printf("%-12s %-10s %-12s %s\n", "DATE", "TYPE", "AMOUNT", "DESCRIPTION");
+                printf("-------------------------------------------------------------\n");
+
+                // Loop through all stored transactions and display each one
+                for (int i = 0; i < count; i++) {
+                    printf("%-12s %-10s 元%-11.2f %s\n",
+                           list[i].date,           // Display date
+                           list[i].type,           // Display type
+                           list[i].amount,         // Display amount (formatted to 2 decimal places)
+                           list[i].desc);          // Display description
+
+                    // Update running balance: add income, subtract expenses
+                    if (strcmp(list[i].type, "INCOME") == 0)
+                        balance += list[i].amount;      // Add income to balance
+                    else
+                        balance -= list[i].amount;      // Subtract expense from balance
+                }
+
+                printf("-------------------------------------------------------------\n");
+
+                // Display final balance with warning if negative
+                if (balance < 0)
+                    printf("💰 Current Balance: -元%.2f ⚠️\n", -balance);  // Show positive with minus sign
+                else
+                    printf("💰 Current Balance: 元%.2f\n", balance);
+            }
+
+        // === CHOICE 3: CLEAR ALL HISTORY ===
+        } else if (choice == 3) {
+            char confirm;  // Variable to store user's confirmation response
+            printf("\n⚠️  WARNING: This will delete ALL records!\n");
+            printf("Are you sure? (y/n): ");
+            scanf(" %c", &confirm);  // Read confirmation character
+
+            // Only clear if user confirms with 'y' or 'Y'
+            if (confirm == 'y' || confirm == 'Y') {
+                count = 0;  // Reset counter to 0 (clears memory, not file yet)
+                printf("✅ All history cleared from memory!\n");
+            } else {
+                printf("❌ Clear cancelled.\n");
+            }
+
+        // === CHOICE 4: SAVE & EXIT ===
+        } else if (choice == 4) {
+            // Open file in write mode (creates new file or overwrites existing)
+            FILE *f_save = fopen("tracker.txt", "w");
+            
+            // Write all transactions to file
+            for (int i = 0; i < count; i++) {
+                fprintf(f_save, "%s %s %.2f %s\n",
+                        list[i].date,           // Write date
+                        list[i].type,           // Write type
+                        list[i].amount,         // Write amount (2 decimal places)
+                        list[i].desc);          // Write description
+            }
+            fclose(f_save);  // Close file when done writing
+            
+            printf("💾 Saving your data...\n");
+            printf("✅ All changes saved successfully.\n");
+            printf("👋 See you next time!\n");
+            break;  // Exit the while loop and end the program
+
+        // === INVALID INPUT ===
+        } else {
+            // Handle any input that isn't 1-4
+            printf("❌ Invalid choice! Please enter 1-4.\n");
+        }
+    }
+
+    return 0;  // Return 0 to indicate successful program execution
+}
